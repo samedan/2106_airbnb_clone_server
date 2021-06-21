@@ -6,6 +6,7 @@ const config = require("./config/dev");
 
 const rentalRoutes = require("./routes/rentals");
 const usersRoutes = require("./routes/users");
+const { onlyAuthUsers } = require("./controllers/users");
 
 const PORT = process.env.PORT || 3001;
 
@@ -29,6 +30,11 @@ mongoose.connect(
 
 // Middleware
 app.use(bodyParser.json());
+
+// Auth Route
+app.get("/api/v1/secret", onlyAuthUsers, (req, res) => {
+  return res.json({ message: "Secret unlocked" });
+});
 
 // API Routes
 app.use("/api/v1/rentals", rentalRoutes);
