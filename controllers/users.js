@@ -1,43 +1,31 @@
-const User = require("../models/users");
+const User = require("../models/user");
 const jwt = require("jsonwebtoken");
 const config = require("../config/dev");
 
+// LOGIN
 exports.login = (req, res) => {
   const { email, password } = req.body;
+
   if (!password || !email) {
-    return res.status(422).send({
-      errors: [
-        {
-          title: "Missing data",
-          detail: "Email or Password is missing",
-        },
-      ],
+    return res.sendApiError({
+      title: "Missing Data",
+      detail: "Missing email or password",
     });
   }
+
   User.findOne({ email }, (error, foundUser) => {
     if (error) {
-      return res.status(422).send({
-        errors: [
-          {
-            title: "DB Error",
-            detail: "Oops, something went wrong",
-          },
-        ],
-      });
+      return res.mongoError(error);
     }
+
     if (!foundUser) {
-      return res.status(422).send({
-        errors: [
-          {
-            title: "Invalid email",
-            detail: "User with provided email doesn't exist",
-          },
-        ],
+      return res.sendApiError({
+        title: "Invalid Email",
+        detail: "Invalid email or password",
       });
     }
-    // from models
+
     if (foundUser.hasSamePassword(password)) {
-      // Success, Generate JWT Token
       const token = jwt.sign(
         {
           sub: foundUser.id,
@@ -48,26 +36,24 @@ exports.login = (req, res) => {
       );
       return res.json(token);
     } else {
-      return res.status(422).send({
-        errors: [
-          {
-            title: "Invalid password",
-            detail: "Please provide valid credentials",
-          },
-        ],
+      return res.sendApiError({
+        title: "Invalid Password",
+        detail: "Invalid email or password",
       });
     }
   });
 };
 
+// REGISTER
 exports.register = (req, res) => {
   const { username, email, password, passwordConfirmation } = req.body;
-  if (!password || !email) {
+
+  if (!password || !email || !username) {
     return res.status(422).send({
       errors: [
         {
-          title: "Missing data",
-          detail: "Email or Password is missing",
+          title: "Missing Data",
+          detail: "Missing username, email or password",
         },
       ],
     });
@@ -78,30 +64,23 @@ exports.register = (req, res) => {
       errors: [
         {
           title: "Invalid password",
-          detail: "Passwords do not match",
+          detail: "Password is not maching confirmation password!",
         },
       ],
     });
   }
 
-  // check is user exists
-  User.findOne({ email: email }, (error, existingUser) => {
+  User.findOne({ email }, (error, existingUser) => {
     if (error) {
-      return res.status(422).send({
-        errors: [
-          {
-            title: "DB Error",
-            detail: "Oops, something went wrong",
-          },
-        ],
-      });
+      return res.mongoError(error);
     }
+
     if (existingUser) {
       return res.status(422).send({
         errors: [
           {
-            title: "Invalid email",
-            detail: "User with this email already exists",
+            title: "Invalid Email",
+            detail: "A user with provided email already exists!",
           },
         ],
       });
@@ -110,22 +89,17 @@ exports.register = (req, res) => {
     const user = new User({ username, email, password });
     user.save((error) => {
       if (error) {
-        return res.status(422).send({
-          errors: [
-            {
-              title: "DB Error",
-              detail: "Oops, something went wrong",
-            },
-          ],
-        });
+        return res.mongoError(error);
       }
-      return res.json({ status: "registered with success" });
+
+      return res.json({ status: "registered" });
     });
   });
 };
 
-exports.onlyAuthUsers = (req, res, next) => {
+exports.onlyAuthUser = (req, res, next) => {
   const token = req.headers.authorization;
+
   if (token) {
     const decodedToken = parseToken(token);
     if (!decodedToken) {
@@ -134,16 +108,9 @@ exports.onlyAuthUsers = (req, res, next) => {
 
     User.findById(decodedToken.sub, (error, foundUser) => {
       if (error) {
-        return res.status(422).send({
-          errors: [
-            {
-              title: "DB Error",
-              detail: "Oops, something went wrong",
-            },
-          ],
-        });
+        return res.mongoError(error);
       }
-      // SUCCESS Path
+
       if (foundUser) {
         res.locals.user = foundUser;
         next();
@@ -158,7 +125,7 @@ exports.onlyAuthUsers = (req, res, next) => {
 
 function parseToken(token) {
   try {
-    return jwt.verify(token.split(" ")[1], config.JWT_SECRET) || null;
+    return jwt.verify(token.split(" ")[1], config.JWT_SECRET);
   } catch (error) {
     return null;
   }
@@ -168,8 +135,8 @@ function notAuthorized(res) {
   return res.status(401).send({
     errors: [
       {
-        title: "Not authorized",
-        message: "You need to Login to gain access",
+        title: "Not Authorized!",
+        detail: "You need to log in to get an access!",
       },
     ],
   });

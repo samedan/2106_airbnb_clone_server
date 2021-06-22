@@ -1,45 +1,47 @@
 const express = require("express");
-const app = express();
-const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
+const bodyParser = require("body-parser");
 const config = require("./config/dev");
+const { provideErrorHandler } = require("./middlewares");
 
+// routes
 const rentalRoutes = require("./routes/rentals");
 const usersRoutes = require("./routes/users");
-const { onlyAuthUsers } = require("./controllers/users");
 
-const PORT = process.env.PORT || 3001;
+const { onlyAuthUser } = require("./controllers/users");
 
 // models
-const Rental = require("./models/rental");
-const User = require("./models/users");
+require("./models/rental");
+require("./models/user");
 
-// Mongo DB
+const app = express();
+const PORT = process.env.PORT || 3001;
+
 mongoose.connect(
   config.DB_URI,
   {
     useNewUrlParser: true,
     useUnifiedTopology: true,
-    useFindAndModify: false,
     useCreateIndex: true,
   },
   () => {
-    console.log("connected to Mongo DB");
+    console.log("Connected to DB!");
   }
 );
 
 // Middleware
 app.use(bodyParser.json());
+app.use(provideErrorHandler);
 
-// Auth Route
-app.get("/api/v1/secret", onlyAuthUsers, (req, res) => {
-  return res.json({ message: "Secret unlocked" });
+app.get("/api/v1/secret", onlyAuthUser, (req, res) => {
+  const user = res.locals.user;
+  return res.json({ message: `Super secret message to: ${user.username}` });
 });
 
-// API Routes
+// Api Routes
 app.use("/api/v1/rentals", rentalRoutes);
 app.use("/api/v1/users", usersRoutes);
 
 app.listen(PORT, () => {
-  console.log("server is listening on port: ", PORT);
+  console.log("Server is listening on port: ", PORT);
 });
