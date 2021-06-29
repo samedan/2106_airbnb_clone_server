@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const { onlyAuthUser } = require("../controllers/users");
 const {
   getRentals,
   getRentalById,
@@ -13,6 +14,6 @@ router.get("/", getRentals);
 router.get("/:rentalId", getRentalById);
 
 // POST
-router.post("/", createRental);
+router.post("/", onlyAuthUser, createRental);
 
 module.exports = router;
