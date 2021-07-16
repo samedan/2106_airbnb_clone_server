@@ -10,16 +10,26 @@ exports.getRentals = (req, res) => {
   });
 };
 
-exports.getRentalById = (req, res) => {
+exports.getRentalById = async (req, res) => {
   const { rentalId } = req.params;
 
-  Rental.findById(rentalId, (error, foundRental) => {
-    if (error) {
-      return res.mongoError(error);
-    }
+  try {
+    const rental = await Rental.findById(rentalId).populate(
+      "owner",
+      "-password -_id"
+    );
+    return res.json(rental);
+  } catch (error) {
+    return res.mongoError(error);
+  }
 
-    return res.json(foundRental);
-  });
+  // Rental.findById(rentalId, (error, foundRental) => {
+  //   if (error) {
+  //     return res.mongoError(error);
+  //   }
+
+  //   return res.json(foundRental);
+  // });
 };
 
 exports.createRental = (req, res) => {
