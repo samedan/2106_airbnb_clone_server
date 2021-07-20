@@ -11,6 +11,17 @@ exports.getRentals = async (req, res) => {
   }
 };
 
+// GET /api/v1/rentals/me
+exports.getUserRentals = async (req, res) => {
+  const { user } = res.locals;
+  try {
+    const rentals = await Rental.find({ owner: user });
+    return res.json(rentals);
+  } catch (error) {
+    return res.mongoError(error);
+  }
+};
+
 exports.getRentalById = async (req, res) => {
   const { rentalId } = req.params;
 

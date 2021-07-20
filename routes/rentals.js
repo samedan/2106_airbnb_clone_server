@@ -5,10 +5,14 @@ const {
   getRentals,
   getRentalById,
   createRental,
+  getUserRentals,
 } = require("../controllers/rentals");
 
 // GET ALL rentals
 router.get("/", getRentals);
+
+// GET user rentals
+router.get("/me", onlyAuthUser, getUserRentals);
 
 // GET one Rental By Id
 router.get("/:rentalId", getRentalById);
