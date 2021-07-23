@@ -6,6 +6,7 @@ const {
   getRentalById,
   createRental,
   getUserRentals,
+  deleteRental,
 } = require("../controllers/rentals");
 
 // GET ALL rentals
@@ -19,5 +20,8 @@ router.get("/:rentalId", getRentalById);
 
 // POST
 router.post("/", onlyAuthUser, createRental);
+
+// DELETE
+router.delete("/:rentalId", onlyAuthUser, deleteRental);
 
 module.exports = router;
