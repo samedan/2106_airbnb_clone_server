@@ -7,6 +7,8 @@ const {
   createRental,
   getUserRentals,
   deleteRental,
+  updateRental,
+  verifyUser,
 } = require("../controllers/rentals");
 
 // GET ALL rentals
@@ -18,8 +20,14 @@ router.get("/me", onlyAuthUser, getUserRentals);
 // GET one Rental By Id
 router.get("/:rentalId", getRentalById);
 
+// GET Verify rental ID if User is Owner
+router.get("/:rentalId/verify-user", onlyAuthUser, verifyUser);
+
 // POST
 router.post("/", onlyAuthUser, createRental);
+
+// UPDATE
+router.patch("/:rentalId", onlyAuthUser, updateRental);
 
 // DELETE
 router.delete("/:rentalId", onlyAuthUser, deleteRental);

@@ -37,6 +37,24 @@ exports.getRentalById = async (req, res) => {
   }
 };
 
+// GET verify User
+exports.verifyUser = async (req, res) => {
+  const { user } = res.locals;
+  const { rentalId } = req.params;
+  try {
+    const rental = await Rental.findById(rentalId).populate("owner");
+    if (rental.owner.id !== user.id) {
+      return res.sendApiError({
+        title: "Invalid user",
+        detail: "You don't have the credentials to modify this rental",
+      });
+    }
+    return res.json({ status: "verified" });
+  } catch (error) {
+    return res.mongoError(error);
+  }
+};
+
 // POST
 exports.createRental = (req, res) => {
   const rentalData = req.body;
@@ -48,6 +66,30 @@ exports.createRental = (req, res) => {
     }
     return res.json(createdRental);
   });
+};
+
+// Update
+exports.updateRental = async (req, res) => {
+  const { rentalId } = req.params;
+  const rentalData = req.body;
+  const { user } = res.locals;
+  try {
+    const rental = await Rental.findById(rentalId).populate(
+      "owner",
+      "-password"
+    );
+    if (rental.owner.id !== user.id) {
+      return res.sendApiError({
+        title: "Invalid user",
+        detail: "You don't have the credentials to modify this rental",
+      });
+    }
+    rental.set(rentalData);
+    await rental.save();
+    return res.status(200).send(rental);
+  } catch (error) {
+    return res.mongoError(error);
+  }
 };
 
 //DELETE /api/v1/rentals/A5gk7_ç3
